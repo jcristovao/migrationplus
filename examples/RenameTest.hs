@@ -16,7 +16,7 @@ import qualified Data.Conduit.List as CL
 import Database.Persist.Postgresql
 #elif WITH_MYSQL
 import Database.Persist.MySQL
-#else
+#elif WITH_SQLITE
 import Database.Persist.Sqlite
 #endif
 import qualified Data.Map as Map
@@ -24,19 +24,14 @@ import qualified Data.Text as T
 
 import Init
 import MigrationSql
-import Database.Persist.Postgresql.Migrationplus
 
 -- Test lower case names
-#if WITH_MONGODB
-mkPersist persistSettings [persistLowerCase|
-#else
 share [mkPersist sqlSettings, mkMigrate "lowerCaseMigrate"] [persistLowerWithSql|
-#endif
 LowerCaseTable id=my_id
     fullName Text
     Triggers
-        tableIdTrig AFTER INSERT OR UPDATE
-        tableTrig BEFORE DELETE UPDATE
+        tableIdTrig AFTER INSERT
+        tableTrig BEFORE DELETE
 RefTable
     someVal Int sql=something_else
     lct LowerCaseTableId
@@ -53,7 +48,7 @@ specs = describe "rename specs" $ do
     it "extra blocks" $ do
         entityExtra (entityDef (Nothing :: Maybe LowerCaseTable)) @?=
             Map.fromList
-                [ ("Triggers", map T.words ["tableIdTrig AFTER INSERT OR UPDATE","tableTrig BEFORE DELETE UPDATE"])
+                [ ("Triggers", map T.words ["tableIdTrig AFTER INSERT","tableTrig BEFORE DELETE"])
                 ]
 
 asIO :: IO a -> IO a

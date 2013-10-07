@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Persist.Migrationplus
- ( ExtraValidate
+ ( SqlUnitName
+ , SqlUnit
+ , ExtraValidate
  , doesNotSupport
  , ExtraCapabilities(..)
  , validateExtras'
@@ -13,22 +15,28 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import Data.Text (Text)
 
+-- | Name of SQL function, trigger, etc
+type SqlUnitName = String
+
+-- | SQL Unit
+type SqlUnit = (SqlUnitName,LT.Text)
+
 -- | Extra validate function
-type ExtraValidate = [LT.Text] -> [[Text]] -> Bool
+type ExtraValidate e = [e] -> [[Text]] -> Bool
 
 -- | Handy for signaling that a backend does not support the given feature
-doesNotSupport :: ExtraValidate
+doesNotSupport :: ExtraValidate e
 doesNotSupport = const (const False)
 
 -- | Validation capabilites of given backend
-data ExtraCapabilities = ExtraCapabilities
-  { valTriggers :: ExtraValidate
-  , valIndexes  :: ExtraValidate
+data ExtraCapabilities e = ExtraCapabilities
+  { valTriggers :: ExtraValidate e
+  , valIndexes  :: ExtraValidate e
   -- more to be added in the future
   -- ... or contribute your own!
   }
 
-capabilities :: [(Text, ExtraCapabilities -> ExtraValidate)]
+capabilities :: [(Text, ExtraCapabilities e -> ExtraValidate e)]
 capabilities = [ ("Triggers", valTriggers)
                , ("Indexes" , valIndexes )
                ]
@@ -36,7 +44,7 @@ capabilities = [ ("Triggers", valTriggers)
 -- | Validate extras: generic function that handles provided backend
 -- validation functions. It only evaluates them if a given extra feature
 -- was requested in the database definition.
-validateExtras' :: ExtraCapabilities -> ValidateExtras LT.Text
+validateExtras' :: ExtraCapabilities e -> ValidateExtras e
 validateExtras' ecap sql extras = let
   lookupExtras capName  = Map.lookup capName extras
   test (capName,capVal) =  (maybe True (capVal ecap $ sql) $ lookupExtras capName)

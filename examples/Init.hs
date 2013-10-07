@@ -44,19 +44,25 @@ import Control.Monad.Trans.Control (MonadBaseControl)
 
 import Control.Monad.IO.Class
 
+#if WITH_POSTGRESQL
 import Database.Persist.Postgresql.Migrationplus
 import Database.Persist.Postgresql
+#elif WITH_SQLITE
+import Database.Persist.Sqlite
+import Database.Persist.Sqlite.Migrationplus
+#endif
 
 sqlite_database :: Text
-sqlite_database = "test/testdb.sqlite3"
+sqlite_database = "testdb.sqlite3"
 
 -- sqlite_database = ":memory:"
 runConn':: (MonadIO m, MonadBaseControl IO m)
-        => ExtrasSql LT.Text
+        => ExtrasSql e
         -> SqlPersistT (NoLoggingT m) t -> m ()
 runConn' esql f = runNoLoggingT $ do
 #  if WITH_POSTGRESQL
     _<- withPostgresqlPool' esql "host=localhost port=5432 user=test dbname=test password=test" 1 $ runSqlPool f
+    liftIO $ print "++++++++++++++++++++++++++++++++++"
 #  elif WITH_MYSQL
     _ <- withMySQLPool defaultConnectInfo
                         { connectHost     = "localhost"
@@ -65,7 +71,10 @@ runConn' esql f = runNoLoggingT $ do
                         , connectDatabase = "test"
                         } 1 $ runSqlPool f
 #  elif WITH_SQLITE
-    _<-withSqlitePool sqlite_database 1 $ runSqlPool f
+    _<- withSqlitePool' esql sqlite_database 1 $ runSqlPool f
+    liftIO $ print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+#else
+    liftIO $ print "-------------------------------"
 #  endif
     return ()
 

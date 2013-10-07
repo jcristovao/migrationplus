@@ -38,7 +38,7 @@ import Control.Monad.Trans.Control (MonadBaseControl)
 import Database.Persist.Migrationplus
 import qualified Database.PostgreSQL.Simple as PG
 
-psqlExtrasValidate :: ExtraCapabilities
+psqlExtrasValidate :: ExtraCapabilities LT.Text
 psqlExtrasValidate = ExtraCapabilities
                         validateTriggers
                         -- ^ validate triggers definition and SQL using hssqlppp
