@@ -79,16 +79,18 @@ test-suite test
                    , QuickCheck            >= 2.6
                    , HUnit                 >= 1.2.5.2
                    , hspec                 >= 1.7.2
-                   , persistent-sqlite     >= 1.2.1
+                   --, persistent-sqlite     >= 1.2.1
 
     if flag(postgresql)
       build-depends: persistent-postgresql >= 1.2.2
       cpp-options:   -DWITH_POSTGRESQL
 
     if flag(mysql)
-      build-depends: persistent-postgresql >= 1.2.2
+      build-depends: persistent-mysql >= 1.2.0
       cpp-options:   -DWITH_MYSQL
+
     if flag(sqlite)
+      build-depends: persistent-sqlite     >= 1.2.1
       cpp-options:   -DWITH_SQLITE
 
 
