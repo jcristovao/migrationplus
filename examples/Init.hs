@@ -66,7 +66,7 @@ runConn':: (MonadIO m, MonadBaseControl IO m)
         -> SqlPersistT (NoLoggingT m) t -> m ()
 runConn' esql f = runNoLoggingT $ do
 #  if WITH_POSTGRESQL
-    _<- withPostgresqlPool' esql pgconn 1 $ runSqlPool f
+    _<- withPostgresqlPool' esql pgconn 2 $ runSqlPool f
 #  elif WITH_MYSQL
     _ <- withMySQLPool defaultConnectInfo
                         { connectHost     = "localhost"

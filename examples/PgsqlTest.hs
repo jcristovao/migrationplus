@@ -10,6 +10,7 @@
 {-# LANGUAGE EmptyDataDecls #-}
 module PgsqlTest (specs) where
 
+import Control.Monad (unless)
 import Control.Monad.IO.Class
 import Control.Concurrent
 import Control.Concurrent.Async
@@ -18,6 +19,9 @@ import qualified Data.Conduit as C
 import qualified Data.Conduit.List as CL
 import qualified Data.Map as Map
 import qualified Data.Text as T
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BC
+import Data.Maybe
 
 import Database.Persist.Postgresql
 import qualified Database.PostgreSQL.LibPQ as PQ
@@ -39,17 +43,19 @@ RefTable
     UniqueRefTable someVal
 |]
 
-listen :: IO ()
+listen :: IO String
 listen = do
   conn <- PQ.connectdb pgconn
   lr   <- PQ.exec conn "LISTEN lower_case_table;"
-  maybe (print "Failure to LISTEN") (const $ waitNotification conn) lr
+  maybe (do {print "Failure to LISTEN"; return "";})
+        (const $ waitNotification conn)
+        lr
   where
     waitNotification conn = do
+      _ <- PQ.consumeInput conn
       noti <- PQ.notifies conn
-      maybe (return ()) (\ n -> print $ "::: NOTIFICATION :::" ++ show n) noti
-      threadDelay 100
-      waitNotification conn
+      threadDelay 300
+      maybe (waitNotification conn) (return . BC.unpack . PQ.notifyExtra) noti
 
 specs :: Spec
 specs = describe "Migration Plus Tests" $ do
@@ -72,8 +78,11 @@ specs = describe "Migration Plus Tests" $ do
       value <- C.runResourceT $
         rawQuery "SELECT full_name from lower_case_table WHERE my_id=1" []
           C.$$ CL.consume
+      -- check the update trigger
       liftIO $ value `shouldBe` [[PersistText "cba"]]
-    liftIO $ wait as
+    -- check that notification was received
+    updatedId <- liftIO $ wait as
+    liftIO $ updatedId `shouldBe` "1"
 
 
 asIO :: IO a -> IO a

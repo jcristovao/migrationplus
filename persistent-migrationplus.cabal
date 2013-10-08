@@ -92,7 +92,7 @@ test-suite test
                    , HUnit                 >= 1.2.5.2
                    , hspec                 >= 1.7.2
                    , async                 >= 2.0.1.4
-                   , postgresql-libpq      >= 0.8.2
+                   , postgresql-libpq      >= 0.8.2.4
                    --, persistent-sqlite     >= 1.2.1
 
     if flag(postgresql)
