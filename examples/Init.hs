@@ -8,6 +8,7 @@
 module Init (
     runConn'
   , sqlite_database
+  , pgconn
 
    -- re-exports
   , module Database.Persist
@@ -28,6 +29,7 @@ import Test.HUnit ((@?=),(@=?), Assertion, assertFailure, assertBool)
 
 import Database.Persist
 import Data.Text (Text)
+import qualified Data.ByteString as BS
 import qualified Data.Text.Lazy as LT
 
 import Control.Monad.Logger
@@ -55,13 +57,16 @@ import Database.Persist.Sqlite.Migrationplus
 sqlite_database :: Text
 sqlite_database = "testdb.sqlite3"
 
+pgconn :: BS.ByteString
+pgconn = "host=localhost port=5432 user=test dbname=test password=test"
+
 -- sqlite_database = ":memory:"
 runConn':: (MonadIO m, MonadBaseControl IO m)
         => ExtrasSql e
         -> SqlPersistT (NoLoggingT m) t -> m ()
 runConn' esql f = runNoLoggingT $ do
 #  if WITH_POSTGRESQL
-    _<- withPostgresqlPool' esql "host=localhost port=5432 user=test dbname=test password=test" 1 $ runSqlPool f
+    _<- withPostgresqlPool' esql pgconn 1 $ runSqlPool f
 #  elif WITH_MYSQL
     _ <- withMySQLPool defaultConnectInfo
                         { connectHost     = "localhost"

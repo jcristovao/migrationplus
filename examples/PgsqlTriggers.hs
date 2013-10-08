@@ -22,6 +22,20 @@ tableIdTrig = [lt|
       LANGUAGE plpgsql VOLATILE;
     |]
 
+tableChgIns :: Text
+tableChgIns= [lt|
+    CREATE OR REPLACE FUNCTION tableChgIns()
+      RETURNS trigger AS
+    $BODY$
+      BEGIN
+        UPDATE lower_case_table SET full_name = 'cba' WHERE my_id = 1;
+        RETURN NULL;
+      END
+    $BODY$
+      LANGUAGE plpgsql VOLATILE;
+    |]
+
+
 tableTrig :: Text
 tableTrig = [lt|
     CREATE OR REPLACE FUNCTION tableTrig()
@@ -36,6 +50,6 @@ tableTrig = [lt|
     |]
 
 triggers :: [Text]
-triggers = [tableTrig, tableIdTrig]
+triggers = [tableTrig, tableIdTrig, tableChgIns]
 
 

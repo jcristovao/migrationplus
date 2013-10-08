@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP #-}
 
-import qualified RenameTest
 import Test.Hspec (hspec)
 import Test.Hspec.Runner
 import Init
@@ -10,8 +9,13 @@ import Filesystem (isFile, removeFile)
 import Filesystem.Path.CurrentOS (fromText)
 import Control.Monad.Trans.Resource (runResourceT)
 
-
 import Database.Persist.Sql (printMigration, runMigrationUnsafe)
+
+#if   WITH_SQLITE
+import qualified SqliteTest
+#elif WITH_POSTGRESQL
+import qualified PgsqlTest
+#endif
 
 setup migration = do
   printMigration migration
@@ -26,4 +30,8 @@ main = do
   sqExists <- isFile $ fromText sqlite_database
   when sqExists $ removeFile $ fromText sqlite_database
   hspec $ do
-    RenameTest.specs
+#   if   WITH_SQLITE
+    SqliteTest.specs
+#   elif WITH_POSTGRESQL
+    PgsqlTest.specs
+#   endif
