@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Triggers where
+module PgsqlTriggers where
 
 import Text.Shakespeare.Text
 import Data.Text.Lazy (Text)
@@ -15,7 +15,7 @@ tableIdTrig = [lt|
       RETURNS trigger AS
     $BODY$
       BEGIN
-        PERFORM pg_notify(TG_TABLE_NAME,NEW.id::TEXT);
+        PERFORM pg_notify(TG_TABLE_NAME,NEW.my_id::TEXT);
         RETURN NULL;
       END
     $BODY$

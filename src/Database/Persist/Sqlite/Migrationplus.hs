@@ -156,7 +156,7 @@ getSqlCode triggers tn (entry,line) =
                         (readWhen when)
                         (readEvent tevn)
                         (T.unpack tn)
-                        (LT.unpack . snd . fromJust
+                        (LT.unpack . LT.replace "\n" " " . snd . fromJust
                           $ find (\x -> fst x == T.unpack fn) triggers)
               in if length values == 3
                     then ct

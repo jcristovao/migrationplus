@@ -62,7 +62,6 @@ runConn':: (MonadIO m, MonadBaseControl IO m)
 runConn' esql f = runNoLoggingT $ do
 #  if WITH_POSTGRESQL
     _<- withPostgresqlPool' esql "host=localhost port=5432 user=test dbname=test password=test" 1 $ runSqlPool f
-    liftIO $ print "++++++++++++++++++++++++++++++++++"
 #  elif WITH_MYSQL
     _ <- withMySQLPool defaultConnectInfo
                         { connectHost     = "localhost"
@@ -72,9 +71,6 @@ runConn' esql f = runNoLoggingT $ do
                         } 1 $ runSqlPool f
 #  elif WITH_SQLITE
     _<- withSqlitePool' esql sqlite_database 1 $ runSqlPool f
-    liftIO $ print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-#else
-    liftIO $ print "-------------------------------"
 #  endif
     return ()
 

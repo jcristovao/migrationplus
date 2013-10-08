@@ -4,7 +4,7 @@ module MigrationSql
   , persistUpperWithSql
 #if WITH_POSTGRESQL
   , module Database.Persist.Postgresql.Migrationplus
-  , module Triggers
+  , module PgsqlTriggers
 #elif WITH_SQLITE
   , module Database.Persist.Sqlite.Migrationplus
   , module SqliteTriggers
@@ -12,15 +12,11 @@ module MigrationSql
   ) where
 
 #if WITH_POSTGRESQL
-import Triggers
-#elif WITH_SQLITE
-import SqliteTriggers
-#endif
-
-#if WITH_POSTGRESQL
 import Database.Persist.Postgresql.Migrationplus
+import PgsqlTriggers
 #elif WITH_SQLITE
 import Database.Persist.Sqlite.Migrationplus
+import SqliteTriggers
 #endif
 
 sql = concat [triggers]
