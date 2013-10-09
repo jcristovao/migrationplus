@@ -59,11 +59,51 @@ persistU extras =
     upperCaseSettings
       { validateExtras = validateExtras' psqlExtrasValidate extras }
 
+
+-- | Similar to @withPostgresqlConn , but with additional user defined
+-- migration code generation tool, to add custom SQL code to the migration
+-- process.
+withPostgresqlPool'
+  :: MonadIO m
+  => CustomSql c -- ^ Custom SQL to be executed at migration
+  -> ConnectionString -- ^ Connection string to the database.
+  -> Int -- ^ Number of connections to be kept open in the pool.
+  -> (ConnectionPool -> m a)
+  -- ^ Action to be executed that uses the
+  -- connection pool.
+  -> m a
+withPostgresqlPool' csql ci = withSqlPool $ open' csql ci
+
+
+-- | Similar to @createPostgresqlPool , but with additional user defined
+-- migration code generation tool, to add custom SQL code to the migration
+-- process.
+createPostgresqlPool'
+  :: MonadIO m
+  => CustomSql c -- ^ Custom SQL to be executed at migration
+  -> ConnectionString -- ^ Connection string to the database.
+  -> Int -- ^ Number of connections to be kept open in the pool.
+  -> m ConnectionPool
+createPostgresqlPool' csql ci = createSqlPool $ open' csql ci
+
+
+-- | Similar to @withPostgresqlConn , but with additional user defined
+-- migration code generation tool, to add custom SQL code to the migration
+-- process.
+withPostgresqlConn'
+  :: (MonadIO m, MonadBaseControl IO m)
+  => CustomSql c -- ^ Custom SQL to be executed at migration
+  -> ConnectionString -- ^ Connection string to the database.
+  -> (Connection -> m a)
+  -> m a
+withPostgresqlConn' csql = withSqlConn . (open' csql)
+
+
 -- | open a PostgresSQL connection with the provided
--- custom migration function
-open' :: ExtrasSql e -> ConnectionString -> IO Connection
-open' gsql cstr = do
-    PG.connectPostgreSQL cstr >>= openSimpleConn' gsql
+-- custom migration
+open' :: CustomSql c -> ConnectionString -> IO Connection
+open' csql cstr = do
+    PG.connectPostgreSQL cstr >>= openSimpleConn' csql
 
 
 -- | The two types of trigger supported by PostgreSQL tables.
@@ -130,8 +170,8 @@ getSqlFuncAttrs sql = case sql of
 
 -- | Get SQL code for extras.
 -- Currently only supports Triggers
-getSqlCode :: GetExtrasSql LT.Text
-getSqlCode triggers tn (entry,line) =
+getSqlCode :: GetCustomSql LT.Text
+getSqlCode sql tn (entry,line) =
     T.concat $ map getSqlCode' line
   where getSqlCode' values = let
           result = case entry of
@@ -147,7 +187,7 @@ getSqlCode triggers tn (entry,line) =
                     . snd)
                   $ find (\(n,_) -> n == (T.unpack . T.toLower) fn)
                   $ catMaybes
-                  $ map (getSqlFuncCode . head . parsePostgreSQL) triggers
+                  $ map (getSqlFuncCode . head . parsePostgreSQL) sql
               -- trigger events
               ct   = createRowTrigger'
                         (T.unpack fn)
@@ -238,54 +278,5 @@ createRowTrigger name' typ' events' table' fn' = let
   createt= CreateTrigger annot name typ events table EachRow fn []
   dropt  = DropTrigger annot IfExists name table Cascade
   in [dropt,createt]
-
--------------------------------------------------------------------------------
--- Extra Stuff ----------------------------------------------------------------
--------------------------------------------------------------------------------
-
--- | Similar to @withPostgresqlConn , but with additional user defined
--- migration code generation tool, to add custom SQL code to the migration
--- process.
-withPostgresqlPool' :: MonadIO m
-                   => ExtrasSql e
-                   -- ^ Function to get custom SQL to be executed
-                   -- at migration
-                   -> ConnectionString
-                   -- ^ Connection string to the database.
-                   -> Int
-                   -- ^ Number of connections to be kept open in
-                   -- the pool.
-                   -> (ConnectionPool -> m a)
-                   -- ^ Action to be executed that uses the
-                   -- connection pool.
-                   -> m a
-withPostgresqlPool' gsql ci = withSqlPool $ open' gsql ci
-
-
--- | Similar to @createPostgresqlPool , but with additional user defined
--- migration code generation tool, to add custom SQL code to the migration
--- process.
-createPostgresqlPool':: MonadIO m
-                     => ExtrasSql e
-                     -- ^ Function to get custom SQL to be executed
-                     -- at migration
-                     -> ConnectionString
-                     -- ^ Connection string to the database.
-                     -> Int
-                     -- ^ Number of connections to be kept open
-                     -- in the pool.
-                     -> m ConnectionPool
-createPostgresqlPool' gsql ci = createSqlPool $ open' gsql ci
-
-
--- | Similar to @withPostgresqlConn , but with additional user defined
--- migration code generation tool, to add custom SQL code to the migration
--- process.
-withPostgresqlConn' :: (MonadIO m, MonadBaseControl IO m)
-                   => ExtrasSql e
-                   -> ConnectionString
-                   -> (Connection -> m a)
-                   -> m a
-withPostgresqlConn' gsql = withSqlConn . (open' gsql)
 
 

@@ -52,6 +52,9 @@ import Database.Persist.Postgresql
 #elif WITH_SQLITE
 import Database.Persist.Sqlite
 import Database.Persist.Sqlite.Migrationplus
+#elif WITH_MYSQL
+import Database.Persist.MySQL
+import Database.Persist.MySQL.Migrationplus
 #endif
 
 sqlite_database :: Text
@@ -62,20 +65,20 @@ pgconn = "host=localhost port=5432 user=test dbname=test password=test"
 
 -- sqlite_database = ":memory:"
 runConn':: (MonadIO m, MonadBaseControl IO m)
-        => ExtrasSql e
+        => CustomSql c
         -> SqlPersistT (NoLoggingT m) t -> m ()
-runConn' esql f = runNoLoggingT $ do
+runConn' csql f = runNoLoggingT $ do
 #  if WITH_POSTGRESQL
-    _<- withPostgresqlPool' esql pgconn 2 $ runSqlPool f
+    _<- withPostgresqlPool' csql pgconn 2 $ runSqlPool f
 #  elif WITH_MYSQL
-    _ <- withMySQLPool defaultConnectInfo
+    _ <- withMySQLPool' csql defaultConnectInfo
                         { connectHost     = "localhost"
                         , connectUser     = "test"
                         , connectPassword = "test"
                         , connectDatabase = "test"
                         } 1 $ runSqlPool f
 #  elif WITH_SQLITE
-    _<- withSqlitePool' esql sqlite_database 1 $ runSqlPool f
+    _<- withSqlitePool' csql sqlite_database 1 $ runSqlPool f
 #  endif
     return ()
 

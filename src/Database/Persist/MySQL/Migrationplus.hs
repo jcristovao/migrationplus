@@ -4,19 +4,19 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Database.Persist.Sqlite.Migrationplus
+module Database.Persist.MySQL.Migrationplus
  ( getSqlCode
  , persistL
  , persistU
- , withSqlitePool'
- , withSqliteConn'
- , createSqlitePool'
+ , withMySQLPool'
+ , withMySQLConn'
+ , createMySQLPool'
  ) where
 
 import Language.Haskell.TH.Quote (QuasiQuoter)
 
-import qualified Database.Sqlite as Sqlite (open)
-import Database.Persist.Sqlite hiding (Statement,Update)
+import qualified Database.MySQL.Simple as MySQL (ConnectInfo(..))
+import Database.Persist.MySQL hiding (Statement, Update)
 import Database.Persist.TH (persistWith)
 import Database.Persist.Quasi
 
@@ -39,8 +39,8 @@ import Control.Monad ((>=>))
 
 import Database.Persist.Migrationplus
 
-sqliteExtrasValidate :: ExtraCapabilities SqlUnit
-sqliteExtrasValidate =  ExtraCapabilities
+mysqlExtrasValidate :: ExtraCapabilities SqlUnit
+mysqlExtrasValidate =  ExtraCapabilities
                         validateTriggers
                         -- ^ validate triggers definition and SQL using hssqlppp
                         doesNotSupport
@@ -51,69 +51,71 @@ persistL :: [SqlUnit] -> QuasiQuoter
 persistL extras =
   persistWith
     lowerCaseSettings
-      { validateExtras = validateExtras' sqliteExtrasValidate extras }
+      { validateExtras = validateExtras' mysqlExtrasValidate extras }
 
 -- | Uppper Case quasiquote with custom SQL
 persistU :: [SqlUnit] -> QuasiQuoter
 persistU extras =
   persistWith
     upperCaseSettings
-      { validateExtras = validateExtras' sqliteExtrasValidate extras }
+      { validateExtras = validateExtras' mysqlExtrasValidate extras }
 
--- | Similar to @createSqlitePool , but with additional user defined
+-- | Similar to @withMySQLPool , but with additional user defined
 -- migration code generation tool, to add custom SQL code to the migration
 -- process.
-createSqlitePool'
+withMySQLPool'
   :: MonadIO m
-  => CustomSql c -- ^ Function to get custom SQL to be executed at migration
-  -> Text
-  -> Int
-  -> m ConnectionPool
-createSqlitePool' csql s = createSqlPool $ open' csql s
-
--- | Similar to @withSqlitePool , but with additional user defined
--- migration code generation tool, to add custom SQL code to the migration
--- process.
-withSqlitePool'
-  :: (MonadBaseControl IO m, MonadIO m)
-  => CustomSql c -- ^ Function to get custom SQL to be executed
-  -> Text
-  -> Int -- ^ number of connections to open
-  -> (ConnectionPool -> m a) -> m a
-withSqlitePool' csql s = withSqlPool $ open' csql s
-
--- | Similar to @withSqliteConn , but with additional user defined
--- migration code generation tool, to add custom SQL code to the migration
--- process.
-withSqliteConn'
-  :: (MonadBaseControl IO m, MonadIO m)
-  => CustomSql c -- ^ Function to get custom SQL to be executed
-  -> Text
-  -> (Connection -> m a)
+  => CustomSql c -- ^ Custom SQL to be executed at migration
+  -> MySQL.ConnectInfo -- ^ Connection information.
+  -> Int -- ^ Number of connections to be kept open in the pool.
+  -> (ConnectionPool -> m a)
+  -- ^ Action to be executed that uses the connection pool.
   -> m a
-withSqliteConn' csql = withSqlConn . open' csql
+withMySQLPool' csql ci = withSqlPool $ open' csql ci
 
-open' :: CustomSql c -> Text -> IO Connection
-open' csql = Sqlite.open >=> wrapConnection' csql
+-- | Similar to @createMySQLPool , but with additional user defined
+-- migration code generation tool, to add custom SQL code to the migration
+-- process.
+createMySQLPool'
+  :: MonadIO m
+  => CustomSql c -- ^ Custom SQL to be executed at migration
+  -> MySQL.ConnectInfo -- ^ Connection information.
+  -> Int -- ^ Number of connections to be kept open in the pool.
+  -> m ConnectionPool
+createMySQLPool' csql ci = createSqlPool $ open' csql ci
 
+-- | Similar to @withMySQLConn , but with additional user defined
+-- migration code generation tool, to add custom SQL code to the migration
+-- process.
+withMySQLConn'
+  :: (MonadBaseControl IO m, MonadIO m)
+  => CustomSql c -- ^ Custom SQL to be executed at migration
+  -> MySQL.ConnectInfo -- ^ Connection information.
+  -> (Connection -> m a)
+  -- ^ Action to be executed that uses the connection pool.
+  -> m a
+withMySQLConn' csql = withSqlConn . (open' csql)
 
--- | The two types of trigger supported by Sqlite tables.
+open' :: CustomSql c -> MySQL.ConnectInfo -> IO Connection
+open' = openSimpleConn'
+
+-- | The two types of trigger supported by MySQL tables.
 -- Views also support 'Instead Of', but views are not supported ATM.
-data PostgreSqlTriggerType = BEFORE | AFTER
+data MySQLTriggerType = BEFORE | AFTER
   deriving (Eq,Read)
 
-instance Show PostgreSqlTriggerType where
+instance Show MySQLTriggerType where
   show BEFORE    = "BEFORE"
   show AFTER     = "AFTER"
 
 -- | Does not support "UPDATE OF" syntax
-data SqliteTriggerEvent =  INSERT | UPDATE | DELETE | TRUNCATE | OR
+data MySQLTriggerEvent =  INSERT | UPDATE | DELETE
   deriving (Eq,Show,Read)
 
 -- | Determines if given trigger name exists in passed SQL
 isSqlTrigger :: [SqlUnit] -> String -> Bool
 isSqlTrigger sql name
-  = maybe False (not . null . parseSqlite . snd)
+  = maybe False (not . null . parseMySQL . snd)
   $ find (\x -> name == fst x) sql
 
 -- | Validate trigger entry in extras
@@ -127,10 +129,10 @@ validateTriggers sql ps = all id $ map (validateTrigger sql) ps
           triggerEvn  = params !! 2
           t1 = length params == 3 || error ("Wrong number of parameters" ++ show params)
           t2 = ( not . null
-               $ (reads (T.unpack triggerType) :: [(PostgreSqlTriggerType,String)]))
+               $ (reads (T.unpack triggerType) :: [(MySQLTriggerType,String)]))
              || error ("Invalid trigger type:" ++ show triggerType)
           t3 = ( not . null
-               $ (reads (T.unpack triggerEvn) :: [(SqliteTriggerEvent,String)]))
+               $ (reads (T.unpack triggerEvn) :: [(MySQLTriggerEvent,String)]))
              || error ("Invalid trigger event:" ++ show triggerEvn)
           t4 = (isSqlTrigger sql' $ T.unpack triggerFunc)
              || error ("There is no SQL statement with name:" ++ show triggerFunc)
@@ -172,20 +174,20 @@ getSqlCode sql tn (entry,line) =
           in T.pack result
 
           where readEvent e = let
-                  event = reads e :: [(SqliteTriggerEvent,String)]
+                  event = reads e :: [(MySQLTriggerEvent,String)]
                   in  if not . null $ event
                        then fst . head $ event
                        else error $ "Invalid Trigger Event:" ++ show e
                 readWhen w = let
-                  when = reads w :: [(PostgreSqlTriggerType,String)]
+                  when = reads w :: [(MySQLTriggerType,String)]
                   in  if not . null $ when
                         then head $ fmap fst when
                         else error $ "Invalid Trigger Type:" ++ show w
 
 -- | Parse text using HsSqlPpp
--- It does not support Sqlite syntax, but since it similar enough...
-parseSqlite :: LT.Text -> [Statement]
-parseSqlite sql = let
+-- It does not support MySQL syntax, but since it similar enough...
+parseMySQL :: LT.Text -> [Statement]
+parseMySQL sql = let
   res = parsePlpgsql
     (ParseFlags PostgreSQLDialect) -- TODO: Fix this
     __FILE__
@@ -203,8 +205,8 @@ parseSqlite sql = let
 ------------------------------------------------------------------------------
 -- | Convert a trigger on a row into valid (usable) SQL
 createRowTrigger  :: String
-                    -> PostgreSqlTriggerType
-                    -> SqliteTriggerEvent
+                    -> MySQLTriggerType
+                    -> MySQLTriggerEvent
                     -> String
                     -> String
                     -> String
@@ -216,8 +218,5 @@ createRowTrigger  name when event table fn =
   ++ " ON "
   ++ table ++ " "
   ++ " FOR EACH ROW "
-  ++ " BEGIN "
   ++ fn
-  ++ " END;"
-
 

@@ -15,6 +15,8 @@ import Database.Persist.Sql (printMigration, runMigrationUnsafe)
 import qualified SqliteTest
 #elif WITH_POSTGRESQL
 import qualified PgsqlTest
+#elif WITH_MYSQL
+import qualified MysqlTest
 #endif
 
 setup migration = do
@@ -34,4 +36,6 @@ main = do
     SqliteTest.specs
 #   elif WITH_POSTGRESQL
     PgsqlTest.specs
+#   elif WITH_MYSQL
+    MysqlTest.specs
 #   endif

@@ -55,6 +55,7 @@ library
 
     if flag(mysql)
       build-depends: persistent-mysql >= 1.2.0
+                   , mysql-simple     >= 0.2.2.5
       cpp-options:   -DWITH_MYSQL
 
     if flag(sqlite)
@@ -92,17 +93,17 @@ test-suite test
                    , HUnit                 >= 1.2.5.2
                    , hspec                 >= 1.7.2
                    , async                 >= 2.0.1.4
-                   , postgresql-libpq      >= 0.8.2.4
                    --, persistent-sqlite     >= 1.2.1
 
     if flag(postgresql)
       build-depends: persistent-postgresql >= 1.2.2
                    , postgresql-simple     >= 0.3      && < 0.4
-                   , postgresql-libpq      >= 0.6.1    && < 0.9
+                   , postgresql-libpq      >= 0.8.2.4
       cpp-options:   -DWITH_POSTGRESQL
 
     if flag(mysql)
       build-depends: persistent-mysql >= 1.2.0
+                   , mysql-simple     >= 0.2.2.5
       cpp-options:   -DWITH_MYSQL
 
     if flag(sqlite)
