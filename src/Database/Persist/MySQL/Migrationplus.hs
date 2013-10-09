@@ -152,7 +152,7 @@ getSqlTrigCode sql = case sql of
 -- Currently only supports Triggers
 getSqlCode :: GetCustomSql SqlUnit
 getSqlCode sql tn (entry,line) =
-    T.concat $ map getSqlCode' line
+    concat $ map getSqlCode' line
   where getSqlCode' values = let
           result = case entry of
             "Triggers" -> let
@@ -171,7 +171,7 @@ getSqlCode sql tn (entry,line) =
                     then ct
                     else error $ "Invalid Trigger Specification" ++ show values
             _ -> error "Only triggers supported for the moment"
-          in T.pack result
+          in map (T.pack) result
 
           where readEvent e = let
                   event = reads e :: [(MySQLTriggerEvent,String)]
@@ -209,14 +209,16 @@ createRowTrigger  :: String
                     -> MySQLTriggerEvent
                     -> String
                     -> String
-                    -> String
-createRowTrigger  name when event table fn =
-      "CREATE TRIGGER "
-  ++ name ++ " "
-  ++ show when ++ " "
-  ++ show event ++ " "
-  ++ " ON "
-  ++ table ++ " "
-  ++ " FOR EACH ROW "
-  ++ fn
+                    -> [String]
+createRowTrigger  name when event table fn = let
+  dt = "DROP TRIGGER IF EXISTS " ++ name
+  ct =  "CREATE TRIGGER "
+     ++ name ++ " "
+     ++ show when ++ " "
+     ++ show event ++ " "
+     ++ " ON "
+     ++ table ++ " "
+     ++ " FOR EACH ROW "
+     ++ fn
+  in dt:ct:[]
 

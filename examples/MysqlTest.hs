@@ -27,6 +27,7 @@ LowerCaseTable id=my_id
     fullName Text
     Triggers
         tableIdTrig AFTER INSERT
+        tableTrig BEFORE DELETE
 RefTable
     someVal Int sql=something_else
     lct LowerCaseTableId
@@ -47,11 +48,12 @@ specs = describe "rename specs" $ do
   it "Activates the insertion trigger" $ asIO $ do
     runConn' (getSqlCode,triggers) $ do
       C.runResourceT $
-        rawExecute "INSERT INTO lower_case_table VALUES (1,'abc');" [] C.$$ CL.sinkNull
+        rawExecute "INSERT INTO lower_case_table (full_name) VALUES ('abc');" []
+          C.$$ CL.sinkNull
       value <- C.runResourceT $
-        rawQuery "SELECT full_name from lower_case_table WHERE my_id=1" []
+        rawQuery "SELECT something_else,lct from ref_table ORDER BY id DESC LIMIT 1" []
           C.$$ CL.consume
-      liftIO $ value `shouldBe` [[PersistText "cba"]]
+      liftIO $ map (drop 1) value `shouldBe` [[PersistInt64 1]]
 
 
 asIO :: IO a -> IO a

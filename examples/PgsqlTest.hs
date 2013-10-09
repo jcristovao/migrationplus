@@ -14,6 +14,8 @@ import Control.Monad (unless)
 import Control.Monad.IO.Class
 import Control.Concurrent
 import Control.Concurrent.Async
+import Data.IORef
+import Data.Int
 
 import qualified Data.Conduit as C
 import qualified Data.Conduit.List as CL
@@ -72,17 +74,24 @@ specs = describe "Migration Plus Tests" $ do
       runMigration lowerCaseMigrate
   it "Activates the insertion trigger" $ asIO $ do
     as <- liftIO $ async $ listen
+    id <- liftIO $ newIORef (0 :: Int64)
     runConn' (getSqlCode,triggers) $ do
       C.runResourceT $
-        rawExecute "INSERT INTO lower_case_table VALUES (1,'abc');" [] C.$$ CL.sinkNull
+        rawExecute "INSERT INTO lower_case_table (full_name) VALUES ('abc');" []
+          C.$$ CL.sinkNull
       value <- C.runResourceT $
-        rawQuery "SELECT full_name from lower_case_table WHERE my_id=1" []
+        rawQuery "SELECT my_id,full_name from lower_case_table ORDER BY my_id DESC LIMIT 1" []
           C.$$ CL.consume
       -- check the update trigger
-      liftIO $ value `shouldBe` [[PersistText "cba"]]
+      liftIO $ map (drop 1) value `shouldBe` [[PersistText "cba"]]
+      -- update the expected id
+      let getId (PersistInt64 i) = i
+      liftIO $ writeIORef id (getId $ head . head $ value)
     -- check that notification was received
-    updatedId <- liftIO $ wait as
-    liftIO $ updatedId `shouldBe` "1"
+    liftIO $ do
+      updatedId <- wait as
+      id' <- readIORef id
+      updatedId `shouldBe` (show id')
 
 
 asIO :: IO a -> IO a

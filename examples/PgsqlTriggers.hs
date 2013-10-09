@@ -28,7 +28,7 @@ tableChgIns= [lt|
       RETURNS trigger AS
     $BODY$
       BEGIN
-        UPDATE lower_case_table SET full_name = 'cba' WHERE my_id = 1;
+        UPDATE lower_case_table SET full_name = 'cba' WHERE my_id = (SELECT my_id FROM lower_case_table ORDER BY my_id DESC LIMIT 1);
         RETURN NULL;
       END
     $BODY$

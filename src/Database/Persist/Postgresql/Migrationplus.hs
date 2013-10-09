@@ -172,7 +172,7 @@ getSqlFuncAttrs sql = case sql of
 -- Currently only supports Triggers
 getSqlCode :: GetCustomSql LT.Text
 getSqlCode sql tn (entry,line) =
-    T.concat $ map getSqlCode' line
+    concat $ map getSqlCode' line
   where getSqlCode' values = let
           result = case entry of
             "Triggers" -> let
@@ -196,10 +196,10 @@ getSqlCode sql tn (entry,line) =
                         (T.unpack tn)
                         (T.unpack fn)
               in if length values >= 3
-                    then tf ++ ct
+                    then tf:ct:[]
                     else error $ "Invalid Trigger Specification" ++ show values
             _ -> error "Only PostgreSQL triggers supported for the moment"
-          in T.pack result
+          in map (T.pack) result
 
           where readEvent e = let
                   event = reads e :: [(PostgreSqlTriggerEvent,String)]

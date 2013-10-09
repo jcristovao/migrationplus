@@ -150,7 +150,7 @@ getSqlTrigCode sql = case sql of
 -- Currently only supports Triggers
 getSqlCode :: GetCustomSql SqlUnit
 getSqlCode sql tn (entry,line) =
-    T.concat $ map getSqlCode' line
+    concat $ map getSqlCode' line
   where getSqlCode' values = let
           result = case entry of
             "Triggers" -> let
@@ -166,10 +166,10 @@ getSqlCode sql tn (entry,line) =
                         (LT.unpack . LT.replace "\n" " " . snd . fromJust
                           $ find (\x -> fst x == T.unpack fn) sql)
               in if length values == 3
-                    then ct
+                    then ct:[]
                     else error $ "Invalid Trigger Specification" ++ show values
             _ -> error "Only triggers supported for the moment"
-          in T.pack result
+          in map (T.pack) result
 
           where readEvent e = let
                   event = reads e :: [(SqliteTriggerEvent,String)]
