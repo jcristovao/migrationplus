@@ -13,3 +13,4 @@ TAGS
 dist_y
 /.shelly
 /tarballs/
+testdb.sqlite3
