@@ -32,6 +32,13 @@ fi
 
 for i in `seq 1 5`; do echo "" ; done
 echo -e "\t\t\tThis will take a while... "
+if [ "$1" == "" ];
+then
+	echo ""
+	echo -e "\t\t\tYou are compiling all supported backends."
+	echo -e "\t\t\tFor a specific backend, type ./setup.sh backend"
+	echo -e "\t\t\tWhere backend is one of [mysql|postgresql|sqlite]"
+fi
 for i in `seq 1 5`; do echo "" ; done
 
 if [ "$1" == "mysql" -o "$1" == "" ];
