@@ -42,7 +42,7 @@ psqlExtrasValidate :: ExtraCapabilities LT.Text
 psqlExtrasValidate = ExtraCapabilities
                         validateTriggers
                         -- ^ validate triggers definition and SQL using hssqlppp
-                        validateIndexes
+                        doesNotSupport
                         -- ^ does not support create index atm
 
 -- | Lower Case quasiquote with custom SQL
@@ -210,14 +210,7 @@ getSqlCode sql tn (entry,line) =
               in if length values >= 3
                     then tf:ct:[]
                     else error $ "Invalid Trigger Specification" ++ show values
-            "Indexes" -> let
-              inm = T.unpack $ values !! 0
-              cols= map (T.unpack) $ drop 1 values
-              ci = createIndex inm (T.unpack tn) cols
-              in if length values >= 2
-                    then ci:[]
-                    else error $ "Invalid Index Specification:" ++ show values
-            _ -> error "Only triggers and indexes supported for the moment"
+            _ -> error "Only triggers supported for the moment"
 
           in map (T.pack) result
 
@@ -298,24 +291,5 @@ createRowTrigger name' typ' events' table' fn' = let
   createt= CreateTrigger annot name typ events table EachRow fn []
   dropt  = DropTrigger annot IfExists name table Cascade
   in [dropt,createt]
-
-------------------------------------------------------------------------------
--- Create Indexes ------------------------------------------------------------
-------------------------------------------------------------------------------
--- | Create an Index
-createIndex :: String
-            -> String
-            -> [String]
-            -> String
-createIndex name' table' cols' = let
-  annot  = Annotation (Just (__FILE__,__LINE__,0)) Nothing  []  Nothing  []
-  name   = Nmc name'
-  table  = Name annot [Nmc table']
-  cols   = fmap Nmc cols'
-  createi= CreateIndexPSQL annot name table cols
-  in LT.unpack
-   . printStatements (PrettyPrintFlags PostgreSQLDialect)
-   . replicate 1
-   $ createi
 
 

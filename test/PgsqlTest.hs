@@ -39,8 +39,6 @@ LowerCaseTable id=my_id
         tableIdTrig AFTER INSERT
         tableChgIns AFTER INSERT
         tableTrig BEFORE DELETE
-    Indexes
-        tableIndex full_name
 RefTable
     someVal Int sql=something_else
     lct LowerCaseTableId
@@ -66,10 +64,7 @@ specs = describe "Migration Plus Tests" $ do
   it "Check extra blocks" $ do
       entityExtra (entityDef (Nothing :: Maybe LowerCaseTable)) @?=
           Map.fromList
-              [ ("Indexes"
-                , map T.words [ "tableIndex full_name" ])
-              ,
-                ("Triggers"
+              [ ("Triggers"
                 , map T.words [ "tableIdTrig AFTER INSERT"
                                , "tableChgIns AFTER INSERT"
                                , "tableTrig BEFORE DELETE"])
