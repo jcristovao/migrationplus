@@ -38,9 +38,9 @@ A **trigger** can be:
 * Triggered [BEFORE|AFTER] an event.
 * Only row triggers supported at the moment (statement triggers seem trickier).
 * A [plpgsql](http://www.postgresql.org/docs/9.3/static/plpgsql.html) function for PostgreSQL, compile time checked throught the [hssqlppp](http://jakewheat.github.io/hssqlppp/) package. In the [example](https://github.com/jcristovao/migrationplus/blob/master/test/PgsqlSql.hs) code we test both PostgreSQL notification and a simple update.
- + Supports multiple trigger events [INSERT|UPDATE|DELETE|TRUNCATE] simultaneously (separated by OR).
+ + Supports multiple trigger events \[INSERT|UPDATE|DELETE|TRUNCATE\] simultaneously (separated by OR).
 * A SQL statement for MySQL and SQLite. Please note that MariaDB (the tested backend) does not seem to support updates on the same entry (table?) that raised the trigger.
- + Supports the following trigger events [INSERT|UPDATE|DELETE] (just one at a time).
+ + Supports the following trigger events \[INSERT|UPDATE|DELETE\] (just one at a time).
 
 Both the Trigger specification (on the persistent entity declaration) and the SQL Code are verified at compile time through Template Haskell and Quasiquotation hackery. If you despise these techniques, this package is probably not for you :P
 
