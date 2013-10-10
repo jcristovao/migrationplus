@@ -126,6 +126,8 @@ which currently cannot be achieved without further hackery directly into the per
 * Index support implies further (more extensive) modifications to persistent.
 * Uses template haskell and thus its impacts on the compilation speed.
 * Dependes on [hssqlppp](http://jakewheat.github.io/hssqlppp/), which currently supports only PostgreSQL, Oracle and MS-SQLServer (no explicit MySQL or SQLite) support. However, I found that Jack Wheat seems quite open to patches and contributions, so that could change (and his package supports 'generic' SQL quite well).
+* SQL is fixed, no variable substituion tested at the moment.
+* Does not support MongoDB (mainly because I don't use it... perhaps it is possible).
 * Code is not mature...
 
-Any contribution or suggestions is most welcomed!
+Any contribution or suggestion is most welcomed!
