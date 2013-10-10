@@ -2,7 +2,7 @@
 
 Execute additional actions at [persistent](https://github.com/yesodweb/persistent) migration.
 
-Alpha status... very crude code!
+Alpha status... 
 
 ### Setup ###
 
