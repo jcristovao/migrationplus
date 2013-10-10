@@ -4,28 +4,26 @@ module MigrationSql
   , persistUpperWithSql
 #  if WITH_POSTGRESQL
   , module Database.Persist.Postgresql.Migrationplus
-  , module PgsqlTriggers
+  , module PgsqlSql
 #  elif WITH_SQLITE
   , module Database.Persist.Sqlite.Migrationplus
-  , module SqliteTriggers
+  , module SqliteSql
 #  elif WITH_MYSQL
   , module Database.Persist.MySQL.Migrationplus
-  , module MysqlTriggers
+  , module MysqlSql
 #  endif
   ) where
 
 #if WITH_POSTGRESQL
 import Database.Persist.Postgresql.Migrationplus
-import PgsqlTriggers
+import PgsqlSql
 #elif WITH_SQLITE
 import Database.Persist.Sqlite.Migrationplus
-import SqliteTriggers
+import SqliteSql
 #elif WITH_MYSQL
 import Database.Persist.MySQL.Migrationplus
-import MysqlTriggers
+import MysqlSql
 #endif
-
-sql = concat [triggers]
 
 persistLowerWithSql = persistL sql
 

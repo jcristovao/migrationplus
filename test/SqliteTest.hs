@@ -17,7 +17,6 @@ import qualified Data.Map as Map
 import qualified Data.Text as T
 
 import Database.Persist.Sqlite
-import Control.Concurrent
 
 import Init
 import MigrationSql
@@ -49,11 +48,10 @@ specs = describe "rename specs" $ do
                               , "tableTrig BEFORE DELETE"])
               ]
   it "Create the tables and run additional migration" $ asIO $ do
-    runConn' (getSqlCode,triggers) $ do
+    runConn' (getSqlCode,sql) $ do
       runMigration lowerCaseMigrate
   it "Activates the insertion trigger" $ asIO $ do
-    runConn' (getSqlCode,triggers) $ do
-      liftIO $ threadDelay 2000000
+    runConn' (getSqlCode,sql) $ do
       C.runResourceT $
         rawExecute "INSERT INTO lower_case_table (full_name) VALUES ('abc');" [] C.$$ CL.sinkNull
       value <- C.runResourceT $

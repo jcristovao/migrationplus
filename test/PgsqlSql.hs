@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-module PgsqlTriggers where
+module PgsqlSql where
 
 import Text.Shakespeare.Text
 import Data.Text.Lazy (Text)
@@ -49,7 +49,7 @@ tableTrig = [lt|
       LANGUAGE plpgsql VOLATILE;
     |]
 
-triggers :: [Text]
-triggers = [tableTrig, tableIdTrig, tableChgIns]
+sql :: [Text]
+sql = [tableTrig, tableIdTrig, tableChgIns]
 
 

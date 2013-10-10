@@ -43,10 +43,10 @@ specs = describe "rename specs" $ do
               , map T.words ["tableIdTrig AFTER INSERT","tableTrig BEFORE DELETE"])
               ]
   it "Create the tables and run additional migration" $ asIO $ do
-    runConn' (getSqlCode,triggers) $ do
+    runConn' (getSqlCode,sql) $ do
       runMigration lowerCaseMigrate
   it "Activates the insertion trigger" $ asIO $ do
-    runConn' (getSqlCode,triggers) $ do
+    runConn' (getSqlCode,sql) $ do
       C.runResourceT $
         rawExecute "INSERT INTO lower_case_table (full_name) VALUES ('abc');" []
           C.$$ CL.sinkNull

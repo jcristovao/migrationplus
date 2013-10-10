@@ -2,7 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module SqliteTriggers where
+module SqliteSql where
 
 import Text.Shakespeare.Text
 import Database.Persist.Migrationplus
@@ -17,7 +17,7 @@ tableTrig = ("tableTrig",[lt|
       UPDATE lower_case_table SET full_name = "abc" WHERE id = 1;
     |])
 
-triggers :: [SqlUnit]
-triggers = [tableTrig, tableIdTrig]
+sql :: [SqlUnit]
+sql = [tableTrig, tableIdTrig]
 
 
