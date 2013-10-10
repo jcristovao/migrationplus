@@ -4,6 +4,14 @@ Execute additional actions at [persistent](https://github.com/yesodweb/persisten
 
 Alpha status... very crude code!
 
+### Setup ###
+
+    git clone https://github.com/jcristovao/migrationplus
+    cd migrationplus
+    ./setup.sh [mysql|postgresql|sqlite]
+
+The last step depends on cabal 1.18, since it uses a sandbox to manage the [modified persistent code](https://github.com/jcristovao/persistent/tree/extraPGSQL).
+
 ### Motivation ###
 
 TL;DR : Implementation of triggers on [persistent](https://github.com/yesodweb/persistent) [PostgreSQL](http://hackage.haskell.org/package/persistent-postgresql) to enable the [notify/listen](http://www.postgresql.org/docs/9.3/static/sql-notify.html) feature.
