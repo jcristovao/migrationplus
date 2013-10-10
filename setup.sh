@@ -46,62 +46,16 @@ then
 	# Current MySql from https://github.com/bos/mysql
 	# is not compiling in 1.18
 	git clone https://github.com/jcristovao/mysql
-	cd mysql
-	cabal configure
-	#cabal build
-	cd ..
-
 	git clone https://github.com/bos/mysql-simple
-	cd mysql-simple
-	cabal configure
-	#cabal build
-	cd ..
 fi
 
 # Modified persistent
 git clone -b extraPGSQL git@github.com:jcristovao/persistent.git
-cd persistent/persistent
-cabal configure
-#cabal build
-
-cd ../persistent-template
-cabal configure
-#cabal build
-
-if [ "$1" == "mysql" -o "$1" == "" ];
-then
-	cd ../persistent-mysql
-	cabal sandbox init
-	cabal sandbox add-source ../persistent
-	cabal sandbox add-source ../../mysql
-	cabal sandbox add-source ../../mysql-simple
-	cabal install --only-dependencies
-	#cabal build
-fi
-
-if [ "$1" == "postgresql" -o "$1" == "" ];
-then
-	cd ../persistent-postgresql
-	cabal configure
-	#cabal build
-fi
-
-if [ "$1" == "sqlite" -o "$1" == "" ];
-then
-	cd ../persistent-sqlite
-	cabal configure
-	#cabal build
-fi
 
 # Latest hssqlppp is not in hackage
-cd ../..
 git clone https://github.com/JakeWheat/hssqlppp
-cd hssqlppp/hssqlppp
-cabal configure
-#cabal build
 
 # and finnally, Migration Plus
-cd ../..
 cabal sandbox init
 cabal sandbox add-source persistent/persistent
 cabal sandbox add-source persistent/persistent-template
