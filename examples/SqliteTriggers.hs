@@ -9,7 +9,7 @@ import Database.Persist.Migrationplus
 
 tableIdTrig :: SqlUnit
 tableIdTrig = ("tableIdTrig",[lt|
-      UPDATE lower_case_table SET full_name = "cba" WHERE my_id = 1;
+      INSERT INTO ref_table (something_else,lct) SELECT my_id,1 FROM lower_case_table ORDER BY my_id DESC LIMIT 1;
     |])
 
 tableTrig :: SqlUnit

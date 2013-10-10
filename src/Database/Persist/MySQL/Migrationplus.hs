@@ -31,7 +31,6 @@ import Data.Text (Text)
 
 import Data.Maybe
 import Data.List
-import Data.Char
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Control (MonadBaseControl)

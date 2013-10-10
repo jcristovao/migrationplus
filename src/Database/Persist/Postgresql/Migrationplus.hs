@@ -30,7 +30,6 @@ import Data.Text (Text)
 
 import Data.Maybe
 import Data.List
-import Data.Char
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Control (MonadBaseControl)
@@ -42,7 +41,7 @@ psqlExtrasValidate :: ExtraCapabilities LT.Text
 psqlExtrasValidate = ExtraCapabilities
                         validateTriggers
                         -- ^ validate triggers definition and SQL using hssqlppp
-                        doesNotSupport
+                        validateIndexes
                         -- ^ does not support create index atm
 
 -- | Lower Case quasiquote with custom SQL
@@ -135,7 +134,7 @@ validateTriggers sql ps = all id $ map (validateTrigger sql) ps
           triggerFunc = params !! 0
           triggerType = params !! 1
           triggerEvns = drop 2 params
-          t1 = length params >= 3 || error ("Insufficient parameters" ++ show params)
+          t1 = length params >= 3 || error ("Insufficient trigger parameters" ++ show params)
           t2 = ( not . null
                $ (reads (T.unpack triggerType) :: [(PostgreSqlTriggerType,String)]))
              || error ("Invalid trigger type:" ++ show triggerType)
@@ -146,6 +145,18 @@ validateTriggers sql ps = all id $ map (validateTrigger sql) ps
           t4 = (isSqlTrigger sql' $ T.unpack triggerFunc)
              || error ("There is no (Postgre)SQL function with name:" ++ show triggerFunc)
           in all id [t1,t2,t3,t4]
+
+-- | Validate index entry in extras
+validateIndexes :: [LT.Text]
+                -> [[Text]]
+                -> Bool
+validateIndexes sql ps = all id $ map (validateIndex sql) ps
+  where validateIndex sql' params = let
+          indexName = params !! 0
+          indexCols = drop 1 params
+          t1 = length params >= 2 || error ("Insufficient index parameters" ++ show params)
+          in all id [t1]
+
 
 -- | Given a SQL statement, determines if it is a function, returning its name
 -- and SQL.
@@ -198,7 +209,15 @@ getSqlCode sql tn (entry,line) =
               in if length values >= 3
                     then tf:ct:[]
                     else error $ "Invalid Trigger Specification" ++ show values
-            _ -> error "Only PostgreSQL triggers supported for the moment"
+            "Indexes" -> let
+              inm = T.unpack $ values !! 0
+              cols= map (T.unpack) $ drop 1 values
+              ci = createIndex inm (T.unpack tn) cols
+              in if length values >= 2
+                    then ci:[]
+                    else error $ "Invalid Index Specification:" ++ show values
+            _ -> error "Only triggers and indexes supported for the moment"
+
           in map (T.pack) result
 
           where readEvent e = let
@@ -278,5 +297,24 @@ createRowTrigger name' typ' events' table' fn' = let
   createt= CreateTrigger annot name typ events table EachRow fn []
   dropt  = DropTrigger annot IfExists name table Cascade
   in [dropt,createt]
+
+------------------------------------------------------------------------------
+-- Create Indexes ------------------------------------------------------------
+------------------------------------------------------------------------------
+-- | Create an Index
+createIndex :: String
+            -> String
+            -> [String]
+            -> String
+createIndex name' table' cols' = let
+  annot  = Annotation (Just (__FILE__,__LINE__,0)) Nothing  []  Nothing  []
+  name   = Nmc name'
+  table  = Name annot [Nmc table']
+  cols   = fmap Nmc cols'
+  createi= CreateIndexPSQL annot name table cols
+  in LT.unpack
+   . printStatements (PrettyPrintFlags PostgreSQLDialect)
+   . replicate 1
+   $ createi
 
 

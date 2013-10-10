@@ -43,7 +43,7 @@ sqliteExtrasValidate :: ExtraCapabilities SqlUnit
 sqliteExtrasValidate =  ExtraCapabilities
                         validateTriggers
                         -- ^ validate triggers definition and SQL using hssqlppp
-                        doesNotSupport
+                        validateIndexes
                         -- ^ does not support create index atm
 
 -- | Lower Case quasiquote with custom SQL
@@ -136,6 +136,18 @@ validateTriggers sql ps = all id $ map (validateTrigger sql) ps
              || error ("There is no SQL statement with name:" ++ show triggerFunc)
           in all id [t1,t2,t3,t4]
 
+-- | Validate index entry in extras
+validateIndexes :: [SqlUnit]
+                -> [[Text]]
+                -> Bool
+validateIndexes sql ps = all id $ map (validateIndex sql) ps
+  where validateIndex sql' params = let
+          indexName = params !! 0
+          indexCols = drop 1 params
+          t1 = length params >= 2 || error ("Insufficient index parameters" ++ show params)
+          in all id [t1]
+
+
 getSqlTrigCode :: Statement -> Maybe (String,Statement)
 getSqlTrigCode sql = case sql of
   (Update _ (Name _ ns) _ _ _ _) -> nameAndSql ns
@@ -168,7 +180,14 @@ getSqlCode sql tn (entry,line) =
               in if length values == 3
                     then ct:[]
                     else error $ "Invalid Trigger Specification" ++ show values
-            _ -> error "Only triggers supported for the moment"
+            "Indexes" -> let
+              inm = T.unpack $ values !! 0
+              cols= map (T.unpack) $ drop 1 values
+              ci = createIndex inm (T.unpack tn) cols
+              in if length values >= 2
+                    then ci:[]
+                    else error $ "Invalid Index Specification:" ++ show values
+            _ -> error "Only triggers and indexes supported for the moment"
           in map (T.pack) result
 
           where readEvent e = let
@@ -219,5 +238,22 @@ createRowTrigger  name when event table fn =
   ++ " BEGIN "
   ++ fn
   ++ " END;"
+
+------------------------------------------------------------------------------
+-- Create Indexes ------------------------------------------------------------
+------------------------------------------------------------------------------
+-- | Create an Index
+createIndex :: String
+            -> String
+            -> [String]
+            -> String
+createIndex name table cols
+  =  "CREATE INDEX IF NOT EXISTS "
+  ++ name
+  ++ " ON "
+  ++ table
+  ++ " ("
+  ++ (concat $ intersperse "," cols)
+  ++ ");"
 
 
