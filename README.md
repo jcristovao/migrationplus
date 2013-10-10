@@ -72,7 +72,10 @@ A) Declare all your sql functions in a file, for example `SqliteSql.hs`:
     sql :: [SqlUnit]
     sql = [tableTrig, tableIdTrig]
     
-Don't forget to gather around all defined variables in one array, that in this case I (in a very imaginative way) called `sql`. The first element of a tupple should be the trigger name defined in the entity declaration, or you will run into a compilation error. Since PostgreSQL uses functions for triggers, the PostgreSQL syntax is somewhat simplified (instead of tupples you just have Lazy Text quasiquotations), and instead the function name must match the trigger name in the entity definition.
+Don't forget to gather around all defined variables in one list, that in this case I (on a very imaginative way) called `sql`. 
+The first element of a tupple should be the trigger name defined in the entity declaration, or you will run into a compilation error.
+ Since PostgreSQL uses functions for triggers, the PostgreSQL syntax is somewhat simplified (instead of tupples you just have Lazy Text quasiquotations),
+ and thus it is the (plpgsql) function name that must match the trigger name in the entity definition.
 
 B) Collect the SQL and define the custom `persistWith` functions. This is a step necessary to get compile time validation of the SQL:
 
@@ -90,7 +93,7 @@ B) Collect the SQL and define the custom `persistWith` functions. This is a step
     persistLowerWithSql = persistL sql
     persistUpperWithSql = persistU sql
 
-C) Run your migration code with one of this functions:
+C) Run your migration code with one of these functions:
 
     import MigrationSql
     (...)
@@ -104,15 +107,17 @@ An **index** is defined as:
 
 An index name followed by a list of columns to index. Sub-indexes are currently not supported.
 
-Actually, index support is very very limited, mainly due to the lack of support of the `IF NOT EXISTS` in either MySQL or PostgreSQL. Each one of these databases requires the use of functions to conditionally create an index (meaning, only create if does not exist), which currently cannot be achieved without further hackery directly in persistent code.
+Actually, index support is really very limited, mainly due to the lack of support of the `IF NOT EXISTS` in either MySQL or PostgreSQL.
+Each one of these databases requires the use of functions to conditionally create an index (meaning, only create if it does not exist),
+which currently cannot be achieved without further hackery directly into the persistent source code.
 
 ### Limitations ###
 
-* Depends on modified version of persistent. I kept the modifications to a minimum, hoping they will be accepted, so let see...
+* Depends on modified version of persistent. I kept the modifications to a minimum, hoping they will be accepted...
 * Trigger and Index names are not escaped (not so serious as it may sound, since no user input should ever reach here, but a serious limitation nevertheless)
-* Index support implied further (more extensive) modifications to persistent.
-* Uses template haskell and thus its not fast.
-* Dependent on [hssqlppp](http://jakewheat.github.io/hssqlppp/) that currently supports only PostgreSQL, Oracle and MS-SQLServer (no explicit MySQL or SQLite) support. However, I found that Jack Wheat seems quite open to patches and contributions, so that could change (and this package supports 'generic' SQL quite well).
+* Index support implies further (more extensive) modifications to persistent.
+* Uses template haskell and thus its impacts on the compilation speed.
+* Dependes on [hssqlppp](http://jakewheat.github.io/hssqlppp/), which currently supports only PostgreSQL, Oracle and MS-SQLServer (no explicit MySQL or SQLite) support. However, I found that Jack Wheat seems quite open to patches and contributions, so that could change (and his package supports 'generic' SQL quite well).
 * Code is not mature...
 
-So, any contribution is most welcomed!
+Any contribution or suggestions is most welcomed!
